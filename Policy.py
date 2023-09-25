@@ -131,22 +131,23 @@ class PolicyAlgorithm(object):
             discounted_vrew -= (np.mean(discounted_vrew)).astype(np.float64)
             discounted_vrew /= ((np.std(discounted_vrew)).astype(np.float64) + 1e-8)
 
-
             vgrads *= discounted_vrew
             grad = self.policy_backward(vstate, vhidden, vgrads)
             for k in self.model: 
                 grad_buffer[k] = grad_buffer[k].astype(np.float64)
                 grad[k] = grad[k].astype(np.float64)
                 grad_buffer[k] += grad[k]
+            
 
             self.learning_rate = self.init_learning * np.sqrt(1 - self.decay ** epoch) / (1 - self.discount ** epoch + 1e-8)
-            self.exporation_rate = self.init_exp_rate * np.sqrt(1 - self.decay ** epoch) / (1 - self.discount ** epoch + 1e-8)
             if epoch % batch_size == 0:
                 for k,v in self.model.items():
                     g = grad_buffer[k]
+                    molbefore = np.copy(self.model[k])
                     rmsprop_cache[k] = self.decay * rmsprop_cache[k] + (1 - self.decay) * g**2
                     self.model[k] += (self.learning_rate * g / (np.sqrt(rmsprop_cache[k]) + 1e-8))
                     grad_buffer[k] = np.zeros_like(v)
+
             
             Util.Util.progress_bar(50 * ((epoch + 1) / episodes), 50, 'Epoch', reward_sum)
             

@@ -21,9 +21,12 @@ import traceback
 import requests
 from bs4 import BeautifulSoup
 from textblob import TextBlob
-import datetime
+from datetime import datetime, timedelta
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor
+
 
 
 class TextPreparer:
@@ -71,37 +74,47 @@ class TextPreparer:
 
 class BasicSentAnalyzer:
 
-    def fetch_stock_news_between_dates(stock_symbol, start_date, end_date):
+    @staticmethod
+    def fetch_stock_news_between_dates(stock_symbol, start_date, end_date, batch_size=5):
         base_url = f'https://news.google.com/rss/search?q={stock_symbol}+stock+news&hl=en-US&gl=US&ceid=US:en'
-        
-        # Convert start_date and end_date to datetime objects
-        #start_date = datetime.datetime.strptime(start_date, '%Y-%m-%d')
-        #end_date = datetime.datetime.strptime(end_date, '%Y-%m-%d')
-
         news_articles = []
 
-        while start_date <= end_date:
-            date_str = start_date.strftime('%Y-%m-%d')
-            url = f"{base_url}&hl=en-US&gl=US&ceid=US:en&geo=US&ts={date_str}T00:00:00Z"
-            response = requests.get(url)
+        with ThreadPoolExecutor() as executor:
+            futures = []
+            current_date = start_date
 
-            if response.status_code == 200:
-                soup = BeautifulSoup(response.text, features='xml')  # Use lxml as the parser
-                items = soup.find_all('item')[:5]
+            while current_date <= end_date:
+                date_str = current_date.strftime('%Y-%m-%d')
+                url = f"{base_url}&hl=en-US&gl=US&ceid=US:en&geo=US&ts={date_str}T00:00:00Z"
+                futures.append(executor.submit(BasicSentAnalyzer.fetch_news_from_url, url))
+                current_date += timedelta(days=1)
 
-                for item in items:
-                    title = item.title.text
-                    description = item.description.text
+            for future in futures:
+                news_articles.extend(future.result()[:batch_size])
 
-                    news_articles.append({
-                        'title': title,
-                        'description': description,
-                        'date': date_str
-                    })
-
-            start_date += datetime.timedelta(days=1)
         return news_articles
 
+    @staticmethod
+    def fetch_news_from_url(url):
+        response = requests.get(url)
+        news_articles = []
+
+        if response.status_code == 200:
+            soup = BeautifulSoup(response.text, features='xml')
+            items = soup.find_all('item')
+
+            for item in items:
+                title = item.title.text
+                description = item.description.text
+
+                news_articles.append({
+                    'title': title,
+                    'description': description,
+                })
+
+        return news_articles
+
+    @staticmethod
     def calculate_average_sentiment(news_articles):
         total_sentiment = 0
         num_articles = 0
@@ -123,12 +136,11 @@ class BasicSentAnalyzer:
         else:
             return 0
 
-
+    @staticmethod
     def get_news_sentiment(stock_symbol, start_date, end_date):
         news_articles = BasicSentAnalyzer.fetch_stock_news_between_dates(stock_symbol, start_date, end_date)
         average_sentiment = BasicSentAnalyzer.calculate_average_sentiment(news_articles)
         return average_sentiment
-
 
 
 class SupervisedLearning(object):

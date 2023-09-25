@@ -46,19 +46,16 @@ class FinanceManager(object):
         return np.array(time_list), np.array(avg_total)
     
     def get_stock_daycount_data(self, key, day, day_count):
-        #Get stock data from file
-
-        if key not in self.dict_of_stock_files.keys():
-            all_array = Util.save_load(3, f'FinanceAIClean\saved_stocks\{key}.npy', None)
-            dates, prices = all_array[0], all_array[1]
-            nearest_date, index = Util.find_nearest(dates, day)
-            self.dict_of_stock_files[key] = np.array([dates, prices])
-            return dates[index : index + day_count], prices[index : index + day_count]
+        # Get stock data from file or cache
+        if key not in self.dict_of_stock_files:
+            all_array = self.load_stock_data(key)
+            self.dict_of_stock_files[key] = all_array
         else:
             all_array = self.dict_of_stock_files[key]
-            dates, prices= all_array[0], all_array[1]
-            nearest_date, index = Util.find_nearest(dates, day)
-            return dates[index : index + day_count], prices[index : index + day_count]
+
+        dates, prices = all_array[0], all_array[1]
+        nearest_date, index = Util.find_nearest(dates, day)
+        return dates[index : index + day_count], prices[index : index + day_count]
 
     def stock_data_dump(self, keys, start_day, end_day, force = False):
         #Dumps stock data
@@ -105,27 +102,18 @@ class FinanceManager(object):
                 Util.save_load(2, f'FinanceAIClean\saved_freds\{code}', np.array([time_list, data_list]))
     
     def get_fred_day_data(self, codes, day):
-        #Get fred data from file
-
+        # Get fred data from file or cache
         temp_fred_data = {}
         for code in codes:
-            if code not in self.dict_of_fred_data.keys():
-                all_array = Util.save_load(3, f'FinanceAIClean\saved_freds\{code}.npy', None)
-                dates, datas = all_array[0], all_array[1]
-
-                dates = np.array([datetime.fromtimestamp(ts / 1e9) for ts in dates])
-                
-                nearest_date, index = Util.find_nearest(dates, day)
-                self.dict_of_fred_data[code] = np.array([dates, datas])
-                temp_fred_data[code] = np.array([nearest_date, datas[index]])
+            if code not in self.dict_of_fred_data:
+                all_array = self.load_fred_data(code)
+                self.dict_of_fred_data[code] = all_array
             else:
                 all_array = self.dict_of_fred_data[code]
-                dates, datas = all_array[0], all_array[1]
 
-                dates = np.array([datetime.fromtimestamp(ts / 1e9) for ts in dates])
-
-                nearest_date, index = Util.find_nearest(dates, day)
-                temp_fred_data[code] = np.array([nearest_date, datas[index]])
+            dates, datas = all_array[0], all_array[1]
+            nearest_date, index = Util.find_nearest(dates, day)
+            temp_fred_data[code] = np.array([nearest_date, datas[index]])
         
         myKeys = list(temp_fred_data.keys())
         myKeys.sort()
@@ -173,13 +161,31 @@ class FinanceManager(object):
         sorted_dict = {i: temp_fred_data[i] for i in myKeys}
 
         return sorted_dict
+    
+    def load_stock_data(self, key):
+        file_path = f'FinanceAIClean\saved_stocks\{key}.npy'
+        if not Util.file_exists(file_path):
+            time_list, data_list = self.get_stock_data(key, self.end_day, self.start_day)
+            Util.save_load(2, file_path, np.array([time_list, data_list]))
+        else:
+            all_array = Util.save_load(3, file_path, None)
+            return np.array(all_array)
+    
+    def load_fred_data(self, code):
+        file_path = f'FinanceAIClean\saved_freds\{code}.npy'
+        if not Util.file_exists(file_path):
+            time_list, data_list = self.get_fred_data(code, self.start_day, self.end_day)
+            Util.save_load(2, file_path, np.array([time_list, data_list]))
+        else:
+            all_array = Util.save_load(3, file_path, None)
+            return np.array(all_array)
 
     def dump_total_data(self):
-        self.stock_data_dump(self.stock_keys, self.start_day + timedelta(days=365), self.end_day, force=True)
-        self.fred_data_dump(self.data_keys, self.start_day + timedelta(days=365), self.end_day, force=True)
+        self.stock_data_dump(self.stock_keys, self.start_day + timedelta(days=365), self.end_day)
+        self.fred_data_dump(self.data_keys, self.start_day + timedelta(days=365), self.end_day)
 
 class FinanceEnv(object):
-    def __init__(self, stock_code_list, fred_code_list, day_count, scale, day_start=Util.date_after_now(years=2), day_end=Util.date_after_now(years=10)):
+    def __init__(self, stock_code_list, fred_code_list, day_count, scale, act_detail, day_start=Util.date_after_now(years=2), day_end=Util.date_after_now(years=10)):
         self.stock_code_list = stock_code_list
         self.fred_code_list = fred_code_list
         self.day_count = day_count
@@ -187,7 +193,8 @@ class FinanceEnv(object):
         self.day_end = day_end
         self.scale = scale
         self.observation_space = day_count * (1 + 1 + len(fred_code_list)) + 2
-        self.action_space = day_count * 2 + 1
+        self.act_detail = act_detail
+        self.action_space = self.act_detail * 2 + 1
         self.counter = 0
         self.last_action = []
 
@@ -219,40 +226,39 @@ class FinanceEnv(object):
     
     def get_state(self):
         self.current_code_index = random.randint(0, len(self.stock_code_list) - 1)
-        self.afterwards_date = Util.random_date(self.day_list[self.current_code_index][-1] + timedelta(days=1),
-                                                    (self.day_list[self.current_code_index][-1] + timedelta(days=15)))
+        last_day = self.day_list[self.current_code_index][-1]
+        self.afterwards_date = Util.random_date(last_day + timedelta(days=1), last_day + timedelta(days=15))
 
-        new_sent = BasicSentAnalyzer.get_news_sentiment(self.stock_code_list[self.current_code_index], self.day_list[self.current_code_index][-2], self.day_list[self.current_code_index][-1])
-        #print(self.stock_code_list[self.current_code_index], new_sent, self.day_list[self.current_code_index][-2], self.day_list[self.current_code_index][-1])
-        
+        new_sent = BasicSentAnalyzer.get_news_sentiment(self.stock_code_list[self.current_code_index],
+                                                        self.day_list[self.current_code_index][-2],
+                                                        last_day)
+
         int_day_list = Util.convert_secs(self.day_list[self.current_code_index])
 
         data_to_concat = [self.data_list[self.current_code_index], int_day_list]
+
         for fred_code in self.fred_code_list:
             data_to_concat.append(self.fred_list[fred_code][1])
-            #print(fred_code, self.fred_list[fred_code][1])
-        
+
         data_to_concat.append(np.array([Util.convert_secs([self.afterwards_date])]).reshape(1,))
         data_to_concat.append(np.array([new_sent]).reshape(1,))
-        
+
         entire_state = np.concatenate(data_to_concat)
 
-        #print(entire_state.shape)
-        
         return entire_state
 
     def step(self, action, test=False):
         _, new_recent_data = self.finance_manager.get_stock_daycount_data(self.stock_code_list[self.current_code_index], self.afterwards_date, 1)
         percent_change = new_recent_data[0] / self.data_list[self.current_code_index][-1]
-        assumed_action = round(round(math.tanh((percent_change - 1) * 8) + 1, 1) * self.day_count, 0)
+        assumed_action = round(round(math.tanh((percent_change - 1) * 8) + 1, 1) * self.act_detail, 0)
         reward = 0
         if assumed_action == action:
             reward += 5 * self.scale
             self.last_action = []
         else:
             reward -= 5 * self.scale * self.day_count // 2
-            if math.fabs(assumed_action - action) <= (self.day_count // 10 + 1):
-                reward += 5 * (self.scale)
+            """if math.fabs(assumed_action - action) <= (self.day_count // 10 + 1):
+                reward += 5 * (self.scale)"""
             if action > self.action_space // 2 and self.action_space // 2 <= assumed_action:
                 reward -= 5 * self.scale * self.day_count // 2
             if action <= self.action_space // 2 and self.action_space > self.action_space // 2:
@@ -301,14 +307,26 @@ sdata = ['AAPL', 'ADBE', 'ADSK',
 fin_env = FinanceEnv(['AAPL'], ['T10YIE', 'T10Y2Y', 'MORTGAGE30US', 'SNDR', 'MMTY', 'DGS10', 'TB3MS', 
                                 'FEDFUNDS', 'SOFR', 'BAMLH0A0HYM2', 'DTWEXBGS', 'BOGMBASE', 'WRESBAL', 
                                 'RCCCBBALTOT', 'PCE', 'GDP', 'CPIAUCSL', 'INDPRO', 'REAINTRATREARAT10Y', 
-                                'RSXFS', 'COMPOUT'], 3, 1)
+                                'RSXFS', 'COMPOUT'], 5, 2, 10)
 
 p_alg = PolicyAlgorithm(fin_env, 0.01, 0.99, 0.99, 0.05, 24)
 #p_alg.load_model('chad_god-20230903210847')
 
-p_alg.train_render(100, 5, 50)
+profile = cProfile.Profile()
+profile.enable()
 
-"""for i in range(10):
-    p_alg.test(50)"""
+p_alg.train(50, 5, 50)
+
+profile.disable()
+stats = pstats.Stats(profile).sort_stats('cumtime')
+stats.print_stats(10)
+stats = pstats.Stats(profile).sort_stats('tottime')
+stats.print_stats(10)
+
+
+#p_alg.train_render(1000, 5, 50)
+
+for i in range(10):
+    p_alg.test(50)
 
 print(colorama.Fore.CYAN + "BYE THERE, [[Error 404]] HAS HAPPENED YOU NERD. [[Just kidding]] THE PROGRAM HAS FINISHED")
