@@ -11,13 +11,13 @@
         body {
             background-color: black;
             color: white;
-            font-family: 'Arial', sans-serif;
-            margin: 20px;
+            font-family: 'Times New Roman', sans-serif;
+            margin: 40px;
             line-height: 1.6;
         }
 
         h1, h2, h3 {
-            color: #00ffcc;
+            color: white;
         }
 
         p {
