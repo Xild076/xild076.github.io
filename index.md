@@ -27,14 +27,10 @@
 <p>Now, following Karpathy's code like a guideline, here is how this policy algorithm was formed. Like all models, we first begin with the model initialization.</p>
 
 <pre><code>def model_init(self):
-    self.model = {
-        1: np.random.randn(self.hidden_layers, 
-            self.num_states) / np.sqrt(self.num_actions)
-            * self.learning_rate,
-        2: np.random.randn(self.num_actions, 
-            self.hidden_layers) /
-            np.sqrt(self.hidden_layers)
-            * self.learning_rate,
+    def model_init(self):
+        self.model = {
+            1: np.random.randn(self.hidden_layers, self.num_states) / np.sqrt(self.num_actions) * self.learning_rate,
+            2: np.random.randn(self.num_actions, self.hidden_layers) / np.sqrt(self.hidden_layers) * self.learning_rate,
         }
 </code></pre>
 
@@ -54,13 +50,12 @@
 
 <p>By doing a series of matrix products, we arrive flat array of values that we then flatten to get percentages of the actions based on value size relativity.</p>
 
-<pre><code>def policy_backward(self, processed_states, 
-    hiddle_layer_output, grad_log_prob):
-    dW2 = np.dot(hiddle_layer_output.T, grad_log_prob).T
-    dh = np.dot(grad_log_prob, self.model[2])
-    dh[hiddle_layer_output &lt;= 0] = 0 # backprop relu
-    dW1 = np.dot(dh.T, processed_states)
-    return {1:dW1, 2:dW2}
+<pre><code>def policy_backward(self, processed_states, hiddle_layer_output, grad_log_prob):
+        dW2 = np.dot(hiddle_layer_output.T, grad_log_prob).T
+        dh = np.dot(grad_log_prob, self.model[2])
+        dh[hiddle_layer_output <= 0] = 0 # backprop relu
+        dW1 = np.dot(dh.T, processed_states)
+        return {1:dW1, 2:dW2}
 </code></pre>
 
 <p>Policy backward gives us the updated values for policy. First, we multiply the hidden layer h from above and the action gradient we got above. Then, we calculated the first value by multiplying the reversed hidden layer with the states, returning both gradients for the update.</p>
@@ -68,12 +63,10 @@
 <p>We also quickly discount the rewards from up to down, applying the discount to every single reward so that exploration is encouraged.</p>
 
 <pre><code>def discount_rewards(self, rewards):
-        discounted_reward = np.zeros_like(rewards, dtype=
-            np.float64)
+        discounted_reward = np.zeros_like(rewards, dtype=np.float64)
         total_rewards = 0
         for t in reversed(range(0, len(rewards))):
-            total_rewards = total_rewards * self.discount 
-                + rewards[t]
+            total_rewards = total_rewards * self.discount + rewards[t]
             discounted_reward[t] = total_rewards
         return discounted_reward
 </code></pre>
@@ -86,14 +79,11 @@
         for epoch in range(episodes):
             state = self.env.reset()
             prev_state = 0
-            sstate, shidden, sgrads, srewards = [], [], 
-                [], []
+            sstate, shidden, sgrads, srewards = [], [], [], []
             done = False
             counter = 0
-            grad_buffer = {k: np.zeros_like(v) for k, v 
-                in self.model.items()}
-            rmsprop_cache = {k: np.zeros_like(v) for k,
-                v in self.model.items()}
+            grad_buffer = {k: np.zeros_like(v) for k, v in self.model.items()}
+            rmsprop_cache = {k: np.zeros_like(v) for k, v in self.model.items()}
             reward_sum = 0
 </code></pre>
 
@@ -103,27 +93,21 @@
                 counter += 1
                 append_state = state - prev_state
 
-                aprob, hid = self.policy_forward
-                    (append_state)
-                if random.random() &lt;= self.exporation_rate:
-                    action = np.random.choice
-                        (np.arange(self.num_actions))
+                aprob, hid = self.policy_forward(append_state)
+                if random.random() <= self.exporation_rate:
+                    action = np.random.choice(np.arange(self.num_actions))
                 else:
                     max_prob = np.max(aprob)
-                    second_max_prob = np.partition(aprob,
-                        -2)[-2]
-                    probability_difference = max_prob - 
-                        second_max_prob
+                    second_max_prob = np.partition(aprob, -2)[-2]
+                    probability_difference = max_prob - second_max_prob
 
                     threshold = 0.1
 
-                    if probability_difference &gt; threshold:
-                        action = np.random.choice(np.arange
-                            (self.num_actions), p=aprob)
+                    if probability_difference > threshold:
+                        action = np.random.choice(np.arange(self.num_actions), p=aprob)
                     else:
                         action = np.argmax(aprob)
-                    action = np.random.choice(np.arange
-                        (self.num_actions), p=aprob)
+                    action = np.random.choice(np.arange(self.num_actions), p=aprob)
 </code></pre>
 
 <p>This bit chooses an action using policy forward and softmax. Threshold is a variable that is changable within the policy (I totally should make it a variable that can be initialized, but ;D) that is used to determine if the choice should be random based probability or an immediate max. This is because if the difference between the probabilities is too small, then finding the probability would essentially be random, thus the need for the threshold.</p>
@@ -135,9 +119,9 @@
                 sstate.append(append_state)
                 shidden.append(hid)
                 sgrads.append(action_one_hot - aprob)
+                #sgrads.append(-aprob)
                 
-                state, reward, done, _ = self.env.step
-                    (action)
+                state, reward, done, _ = self.env.step(action)
                 srewards.append(reward)
 
                 reward_sum += reward
@@ -148,57 +132,39 @@
             vrewards = np.vstack(srewards)
 
 
-            discounted_vrew = self.discount_rewards
-                (vrewards)
-            discounted_vrew -= (np.mean(discounted_vrew)).
-                astype(np.float64)
-            discounted_vrew /= ((np.std(discounted_vrew)).
-                astype(np.float64) + 1e-8)
+            discounted_vrew = self.discount_rewards(vrewards)
+            discounted_vrew -= (np.mean(discounted_vrew)).astype(np.float64)
+            discounted_vrew /= ((np.std(discounted_vrew)).astype(np.float64) + 1e-8)
 
             vgrads *= discounted_vrew
-            grad = self.policy_backward(vstate, vhidden, 
-                vgrads)
+            grad = self.policy_backward(vstate, vhidden, vgrads)
 </code></pre>
 This part reshapes the inputs and resulting variables so that the variables can be put through the policy backward function to get the gradient. While the reward isn't directly appended, it is multiplied by the vgradients in order to show which states and which actions don't work out that well.
 
 <pre><code>            for k in self.model: 
-                grad_buffer[k] = grad_buffer[k].astype
-                    (np.float64)
-                grad[k] = grad[k].
-                    astype(np.float64)
+                grad_buffer[k] = grad_buffer[k].astype(np.float64)
+                grad[k] = grad[k].astype(np.float64)
                 grad_buffer[k] += grad[k]
             
 
-            self.learning_rate = self.init_learning * 
-                np.sqrt(1 - self.decay ** epoch) / (1 -
-                    self.discount ** epoch + 1e-8)
-            self.exporation_rate -= self.exporation_rate /
-                episodes
+            self.learning_rate = self.init_learning * np.sqrt(1 - self.decay ** epoch) / (1 - self.discount ** epoch + 1e-8)
+            self.exporation_rate -= self.exporation_rate / episodes
             if epoch % batch_size == 0:
                 for k,v in self.model.items():
                     g = grad_buffer[k]
-                    rmsprop_cache[k] = self.decay *
-                        rmsprop_cache[k] + (1 - self.decay)
-                            * g**2
-                    self.model[k] += (self.learning_rate *
-                        g / (np.sqrt(rmsprop_cache[k]) 
-                            + 1e-8))
+                    rmsprop_cache[k] = self.decay * rmsprop_cache[k] + (1 - self.decay) * g**2
+                    self.model[k] += (self.learning_rate * g / (np.sqrt(rmsprop_cache[k]) + 1e-8))
                     grad_buffer[k] = np.zeros_like(v)
 </code></pre>
 This bit of code adds the calculated gradient to gradbuffer, calculates the learning rate with decay over time, and reducing the exploration rate size. Then, using the rmspropcache to converge the gradbuffer for every section of the model.
 
-<pre><code>            
-            Util.Util.progress_bar(50 * ((epoch + 1) /
-                episodes), 50, 'Epoch', f"Total Time Elapsed:
-                    {datetime.datetime.now() - start_now} 
-                        || Reward: {reward_sum}          ")
+<pre><code>            Util.Util.progress_bar(50 * ((epoch + 1) / episodes), 50, 'Epoch', f"Total Time Elapsed: {datetime.datetime.now() - start_now} || Reward: {reward_sum}          ")
             
             self.plot_for_train.append(epoch)
             self.reward_list.append(reward_sum)
         
         self.save_model()
-        winsound.PlaySound("sgm.wav", winsound.SND_ASYNC |
-            winsound.SND_ALIAS )
+        winsound.PlaySound("sgm.wav", winsound.SND_ASYNC | winsound.SND_ALIAS )
         plt.plot(np.arange(episodes), self.reward_list)
         plt.show()
 </code></pre>
@@ -213,10 +179,7 @@ Now, we got the Stock Environment. First, we start with data collection, the mos
         #Getting data based on days
 
         ticker = yf.Ticker(keys)
-        ticker_hist = ticker.history(period='max', 
-            start=start_day.strftime('%Y-%m-%d'), 
-                end=end_day.strftime('%Y-%m-%d'), 
-                    interval='5d')
+        ticker_hist = ticker.history(period='max', start=start_day.strftime('%Y-%m-%d'), end=end_day.strftime('%Y-%m-%d'), interval='5d')
         avg_total = []
         indexi = ticker_hist.index.values
         time_list = []
@@ -227,24 +190,18 @@ Now, we got the Stock Environment. First, we start with data collection, the mos
 </code></pre>
 
 This code, with the module yfinance, pulls data from a certain time period and returns 3 things: the dates of the data and the average value of the training. This is done with the Ticker module and getting the pandas data to average out. This is put into stock data dump.
-<pre><code>def stock_data_dump(self, keys, start_day, end_day, 
-    force = False):
+<pre><code>def stock_data_dump(self, keys, start_day, end_day, force = False):
         #Dumps stock data
 
         for key in keys:
+            print(colorama.Fore.MAGENTA + f"{key}... ", end="") 
             if not force:
-                if not Util.file_exists
-                    (f'saved_stocks\{key}.npy'):
-                    time_list, data_list = 
-                        self.get_stock_data(key, end_day, 
-                            start_day)
-                    Util.save_load(2, f'saved_stocks\{key}.npy', 
-                        np.array([time_list, data_list]))
+                if not Util.file_exists(f'saved_stocks\{key}.npy'):
+                    time_list, data_list = self.get_stock_data(key, end_day, start_day)
+                    Util.save_load(2, f'saved_stocks\{key}.npy', np.array([time_list, data_list]))
             else:
-                time_list, data_list = self.get_stock_data
-                    (key, end_day, start_day)
-                Util.save_load(2, f'saved_stocks\{key}.npy',
-                    np.array([time_list, data_list]))
+                time_list, data_list = self.get_stock_data(key, end_day, start_day)
+                Util.save_load(2, f'saved_stocks\{key}.npy', np.array([time_list, data_list]))
         print("")
 </code></pre>
 This code pulls the data from the internet and saves that data within the system so the training doesn't have to pull data from the internet every single time, which saves quite a lot of time.
@@ -257,17 +214,16 @@ This code pulls the data from the internet and saves that data within the system
             all_array = self.dict_of_stock_files[key]
 
         dates, prices = all_array[0], all_array[1]
-        nearest_date, index = 
-            Util.find_nearest(dates, day)
-        return dates[index : index + day_count], 
-            prices[index : index + day_count]
+        nearest_date, index = Util.find_nearest(dates, day)
+        return dates[index : index + day_count], prices[index : index + day_count]
 </code></pre>
 The culmination of all this code is getting the data based on a day count, which would provide one with x amount of days of data with a certain start date.
 This same concept is applied to FRED, or Federal Reserve Economic Data database to get data about the economy, using datareader from pandas. Sometimes, some parts of the datareader produce null values, so we have to replace them with the average in order to make sure every part is filled.
 <pre><code>def get_fred_data(self, code, start_day, end_day):
+        #['T10YIE', 'REAINTRATREARAT10Y', 'UNRATE'] 
+
         data_source = 'fred'
-        data = DataReader(name=code, data_source=data_source, 
-            start=end_day, end=start_day)
+        data = DataReader(name=code, data_source=data_source, start=end_day, end=start_day)
         data_np = np.array(data)
         data_list = []
         mean = 0
@@ -292,8 +248,7 @@ def fetch_news_from_url(url):
 
         news_articles = []
         if response.status_code == 200:
-            soup = BeautifulSoup
-                (response.text, features='xml')
+            soup = BeautifulSoup(response.text, features='xml')
             items = soup.find_all('item')
 
             for item in items:
@@ -309,8 +264,7 @@ def fetch_news_from_url(url):
 </code></pre>
 This first, all the saved news articles are put into a system where between certain dates, news articles are fetched from Google. By adding the stock symbol on the base of google news, this can pull the first some amount of news articles from the web, putting the text into a list.
 <pre><code>@staticmethod
-def fetch_stock_news_between_dates(stock_symbol, 
-    start_date, end_date, batch_size=5):
+def fetch_stock_news_between_dates(stock_symbol, start_date, end_date, batch_size=5):
         base_url = 'https://news.google.com/rss/search?'
         news_articles = []
 
@@ -329,18 +283,17 @@ def fetch_stock_news_between_dates(stock_symbol,
                     'ts': f'{date_str}T00:00:00Z'
                 }
                 url = base_url + urlencode(params)
-                futures.append(executor.submit(BasicSentAnalyzer
-                    .fetch_news_from_url, url))
+                futures.append(executor.submit(BasicSentAnalyzer.fetch_news_from_url, url))
                 current_date += timedelta(days=1)
 
             for future in futures:
-                news_articles.extend(future.result()
-                    [:batch_size])
+                news_articles.extend(future.result()[:batch_size])
 
         return news_articles
+
 </code></pre>
 After all this is done, all the the news articles are placed into the nltk sentiment analyzer for analysis, which is averaged out.
-<pre><code>@staticmethod
+<pre><code>@@staticmethod
 def calculate_average_sentiment(news_articles):
         total_sentiment = 0
         num_articles = len(news_articles)
@@ -348,19 +301,16 @@ def calculate_average_sentiment(news_articles):
         sid = SentimentIntensityAnalyzer()
 
         for article in news_articles:
-            text = article['title'] + ' ' + article
-                ['description']
+            text = article['title'] + ' ' + article['description']
 
-            sentiment = sid.polarity_scores(text)
-                ['compound']
+            sentiment = sid.polarity_scores(text)['compound']
             total_sentiment += sentiment
 
         if num_articles > 0:
-            average_sentiment = total_sentiment 
-                / num_articles
+            average_sentiment = total_sentiment / num_articles
             return average_sentiment
         else:
-            return 1 
+            return 1
 </code></pre>
 Now that all the data preparation is finished, the rest is a simple environment formation. A random date between the data range is round, and the data including dates, stock value, FRED dates, FRED data, and new data are all gathered into a state and normalized. The action is calculated from 0 to 2 times the acting detail based on this formula: \(mappedvalue = math.floor((percentchange - 1) / (self.upto / self.actdetail)) + self.actdetail + 1\), of which the AI needs to find. All of this comes together to from an environment where the max score is 500 if the AI gets all the guesses correct and -1000 if the AI gets all the guesses wrong. The environment can be placed into the Policy Algorithm for it to train.
 
