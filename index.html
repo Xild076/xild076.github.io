@@ -345,7 +345,7 @@ def fetch_stock_news_between_dates(stock_symbol, start_date, end_date, batch_siz
 
 </code></pre>
 <p>After all this is done, all the the news articles are placed into the nltk sentiment analyzer for analysis, which is averaged out.</p>
-<pre class="language-python"><code>@@staticmethod
+<pre class="language-python"><code>@staticmethod
 def calculate_average_sentiment(news_articles):
         total_sentiment = 0
         num_articles = len(news_articles)
