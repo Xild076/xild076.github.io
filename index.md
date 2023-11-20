@@ -9,8 +9,8 @@
         integrity="sha256-W7ry+jEvToSqeCrD7TktYBEb9bZXTENiS5+eq0iR98E=" crossorigin="anonymous" />
     <style>
         body {
-            background-color: black;
-            color: white;
+            background-color: #111f33;
+            color: #bababa;
             font-family: 'Times New Roman', sans-serif;
             margin: 40px;
             line-height: 1.6;
@@ -21,14 +21,14 @@
         }
 
         p {
-            margin-bottom: 20px;
+            margin-bottom: 40px;
         }
 
         pre {
             background-color: #333;
-            color: #fff;
+            color: #bababa;
             padding: 15px;
-            border-radius: 5px;
+            border-radius: 10px;
             overflow: auto;
         }
     </style>
