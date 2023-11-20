@@ -20,6 +20,10 @@
             color: #bababa;
         }
 
+        h1, h2 {
+            text-align: center;
+        }
+
         a {
             color: #00ffee
         }
@@ -40,17 +44,17 @@
 <body>
 <h1>RL for stock [By Harry Yin]</h1>
 
-<h1>Motivations for RL in Forecasting Stock Prices</h1>
+<h2>Motivations for RL in Forecasting Stock Prices</h2>
 
 <p>There were two main algorithms we could have done for our predictions of stock prices: Supervised Learning and Reinforcement Learning. Let us list out the benefits and downsides.</p>
 
-<p><strong>Supervised Learning:</strong></p>
+<h3>Supervised Learning:</h3>
 <p>The pros are the fact that the training model is relatively easy. The learning speed of supervised learning usually surpasses that of a reinforcement learning algorithm and the model loss function is easier to play with. The con is that it can't be expanded upon. If I wanted it to learn further days with continuity, that would not be possible.</p>
 
-<p><strong>Reinforcement Learning:</strong></p>
+<h3>Reinforcement Learning:</h3>
 <p>The major pro is the fact that it can be expanded upon. If I want it to predict the stock consistently for the next 2 weeks, it would be possible, unlike with supervised learning. However, unlike supervised learning, the training is much more difficult. Supervised learning produces results quicker and more consistently.</p>
 
-<p><strong>Verdict:</strong></p>
+<h3>Verdict:</h3>
 <p>All in all, I decided to go with reinforcement learning. The main reason was personal; I wanted to try out reinforcement learning. The training turned out to be a massive drawback; however, I decided the learning experience and the possibility of expansion outweighed that drawback.</p>
 
 <h2>Development of the Policy Algorithm</h2>
