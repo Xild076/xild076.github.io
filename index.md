@@ -4,7 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>RL for Stocks</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism.min.css" integrity="sha256-W7ry+jEvToSqeCrD7TktYBEb9bZXTENiS5+eq0iR98E=" crossorigin="anonymous" />
 </head>
+<style>
+    body {
+        background-color: black;
+        color: white;
+    }
+</style>
 <body>
 <h1>RL for stock [By Harry Yin]</h1>
 
@@ -27,8 +34,7 @@
 
 <p>Now, following Karpathy's code like a guideline, here is how this policy algorithm was formed. Like all models, we first begin with the model initialization.</p>
 
-<pre><code>def model_init(self):
-    def model_init(self):
+<pre class="language-python"><code>def model_init(self):
         self.model = {
             1: np.random.randn(self.hidden_layers, self.num_states) / np.sqrt(self.num_actions) * self.learning_rate,
             2: np.random.randn(self.num_actions, self.hidden_layers) / np.sqrt(self.hidden_layers) * self.learning_rate,
@@ -39,7 +45,7 @@
 
 <p>Thusly, we have policy forward.</p>
 
-<pre><code>def policy_forward(self, state):
+<pre class="language-python"><code>def policy_forward(self, state):
     m1 = self.model[1]
     m2 = self.model[2]
     h = np.dot(self.model[1], state)
@@ -51,7 +57,7 @@
 
 <p>By doing a series of matrix products, we arrive flat array of values that we then flatten to get percentages of the actions based on value size relativity.</p>
 
-<pre><code>def policy_backward(self, processed_states, hiddle_layer_output, grad_log_prob):
+<pre class="language-python"><code>def policy_backward(self, processed_states, hiddle_layer_output, grad_log_prob):
         dW2 = np.dot(hiddle_layer_output.T, grad_log_prob).T
         dh = np.dot(grad_log_prob, self.model[2])
         dh[hiddle_layer_output <= 0] = 0 # backprop relu
@@ -63,7 +69,7 @@
 
 <p>We also quickly discount the rewards from up to down, applying the discount to every single reward so that exploration is encouraged.</p>
 
-<pre><code>def discount_rewards(self, rewards):
+<pre class="language-python"><code>def discount_rewards(self, rewards):
         discounted_reward = np.zeros_like(rewards, dtype=np.float64)
         total_rewards = 0
         for t in reversed(range(0, len(rewards))):
@@ -74,7 +80,7 @@
 
 <p>Now, we are on the training process:</p>
 
-<pre><code>def train(self, episodes, batch_size, cmax):
+<pre class="language-python"><code>def train(self, episodes, batch_size, cmax):
         start_now = datetime.datetime.now()
 
         for epoch in range(episodes):
@@ -90,7 +96,7 @@
 
 <p>We start by initializing all our memory data. sstate, shidden, sgrads, srewards, are all saved arrays of previous grads that are used to update gradbuffer which is used to update model. rmspropcache is a model coverger that forces it to move towards the center.</p>
 
-<pre><code>            while not done and counter != cmax:
+<pre class="language-python"><code>            while not done and counter != cmax:
                 counter += 1
                 append_state = state - prev_state
 
@@ -113,7 +119,7 @@
 
 <p>This bit chooses an action using policy forward and softmax. Threshold is a variable that is changable within the policy (I totally should make it a variable that can be initialized, but ;D) that is used to determine if the choice should be random based probability or an immediate max. This is because if the difference between the probabilities is too small, then finding the probability would essentially be random, thus the need for the threshold.</p>
 
-<pre><code>                action_one_hot = np.zeros(self.num_actions)
+<pre class="language-python"><code>                action_one_hot = np.zeros(self.num_actions)
                 action_one_hot[action] = 1
 
 
@@ -140,9 +146,10 @@
             vgrads *= discounted_vrew
             grad = self.policy_backward(vstate, vhidden, vgrads)
 </code></pre>
-This part reshapes the inputs and resulting variables so that the variables can be put through the policy backward function to get the gradient. While the reward isn't directly appended, it is multiplied by the vgradients in order to show which states and which actions don't work out that well.
 
-<pre><code>            for k in self.model: 
+<p>This part reshapes the inputs and resulting variables so that the variables can be put through the policy backward function to get the gradient. While the reward isn't directly appended, it is multiplied by the vgradients in order to show which states and which actions don't work out that well.</p>
+
+<pre class="language-python"><code>            for k in self.model: 
                 grad_buffer[k] = grad_buffer[k].astype(np.float64)
                 grad[k] = grad[k].astype(np.float64)
                 grad_buffer[k] += grad[k]
@@ -157,9 +164,9 @@ This part reshapes the inputs and resulting variables so that the variables can 
                     self.model[k] += (self.learning_rate * g / (np.sqrt(rmsprop_cache[k]) + 1e-8))
                     grad_buffer[k] = np.zeros_like(v)
 </code></pre>
-This bit of code adds the calculated gradient to gradbuffer, calculates the learning rate with decay over time, and reducing the exploration rate size. Then, using the rmspropcache to converge the gradbuffer for every section of the model.
+<p>This bit of code adds the calculated gradient to gradbuffer, calculates the learning rate with decay over time, and reducing the exploration rate size. Then, using the rmspropcache to converge the gradbuffer for every section of the model.</p>
 
-<pre><code>            Util.Util.progress_bar(50 * ((epoch + 1) / episodes), 50, 'Epoch', f"Total Time Elapsed: {datetime.datetime.now() - start_now} || Reward: {reward_sum}          ")
+<pre class="language-python"><code>            Util.Util.progress_bar(50 * ((epoch + 1) / episodes), 50, 'Epoch', f"Total Time Elapsed: {datetime.datetime.now() - start_now} || Reward: {reward_sum}          ")
             
             self.plot_for_train.append(epoch)
             self.reward_list.append(reward_sum)
@@ -169,14 +176,14 @@ This bit of code adds the calculated gradient to gradbuffer, calculates the lear
         plt.plot(np.arange(episodes), self.reward_list)
         plt.show()
 </code></pre>
-Finally, this is just some aesthetic stuff, with a progress bar, plotting the data, and of course, playing sgm.wav everything is done to notify people (sgm.wav is Saul Goodman's Theme from Better Call Saul :l)
+<p>Finally, this is just some aesthetic stuff, with a progress bar, plotting the data, and of course, playing sgm.wav everything is done to notify people (sgm.wav is Saul Goodman's Theme from Better Call Saul :l)</p>
 
-All in all, we have some basic Reinforcement Learning code from only numpy. (Full code: <a href="https://github.com/Xild076/poly-stock-ai/blob/main/Policy.py">https://github.com/Xild076/poly-stock-ai/blob/main/Policy.py</a>)
+<p>All in all, we have some basic Reinforcement Learning code from only numpy. (Full code: <a href="https://github.com/Xild076/poly-stock-ai/blob/main/Policy.py">https://github.com/Xild076/poly-stock-ai/blob/main/Policy.py</a>)</p>
 
 <h2>Development of the Stock Environment</h2>
 
-Now, we got the Stock Environment. First, we start with data collection, the most important step of the process.
-<pre><code>def get_stock_data(self, keys, start_day, end_day):
+<p>Now, we got the Stock Environment. First, we start with data collection, the most important step of the process.</p>
+<pre class="language-python"><code>def get_stock_data(self, keys, start_day, end_day):
         #Getting data based on days
 
         ticker = yf.Ticker(keys)
@@ -190,8 +197,8 @@ Now, we got the Stock Environment. First, we start with data collection, the mos
         return np.array(time_list), np.array(avg_total)
 </code></pre>
 
-This code, with the module yfinance, pulls data from a certain time period and returns 3 things: the dates of the data and the average value of the training. This is done with the Ticker module and getting the pandas data to average out. This is put into stock data dump.
-<pre><code>def stock_data_dump(self, keys, start_day, end_day, force = False):
+<p>This code, with the module yfinance, pulls data from a certain time period and returns 3 things: the dates of the data and the average value of the training. This is done with the Ticker module and getting the pandas data to average out. This is put into stock data dump.</p>
+<pre class="language-python"><code>def stock_data_dump(self, keys, start_day, end_day, force = False):
         #Dumps stock data
 
         for key in keys:
@@ -205,8 +212,8 @@ This code, with the module yfinance, pulls data from a certain time period and r
                 Util.save_load(2, f'saved_stocks\{key}.npy', np.array([time_list, data_list]))
         print("")
 </code></pre>
-This code pulls the data from the internet and saves that data within the system so the training doesn't have to pull data from the internet every single time, which saves quite a lot of time.
-<pre><code>def get_stock_daycount_data(self, key, day, day_count):
+<p>This code pulls the data from the internet and saves that data within the system so the training doesn't have to pull data from the internet every single time, which saves quite a lot of time.</p>
+<pre class="language-python"><code>def get_stock_daycount_data(self, key, day, day_count):
         # Get stock data from file or cache
         if key not in self.dict_of_stock_files:
             all_array = self.load_stock_data(key)
@@ -218,9 +225,9 @@ This code pulls the data from the internet and saves that data within the system
         nearest_date, index = Util.find_nearest(dates, day)
         return dates[index : index + day_count], prices[index : index + day_count]
 </code></pre>
-The culmination of all this code is getting the data based on a day count, which would provide one with x amount of days of data with a certain start date.
-This same concept is applied to FRED, or Federal Reserve Economic Data database to get data about the economy, using datareader from pandas. Sometimes, some parts of the datareader produce null values, so we have to replace them with the average in order to make sure every part is filled.
-<pre><code>def get_fred_data(self, code, start_day, end_day):
+<p>The culmination of all this code is getting the data based on a day count, which would provide one with x amount of days of data with a certain start date.</p>
+<p>This same concept is applied to FRED, or Federal Reserve Economic Data database to get data about the economy, using datareader from pandas. Sometimes, some parts of the datareader produce null values, so we have to replace them with the average in order to make sure every part is filled.</p>
+<pre class="language-python"><code>def get_fred_data(self, code, start_day, end_day):
         #['T10YIE', 'REAINTRATREARAT10Y', 'UNRATE'] 
 
         data_source = 'fred'
@@ -238,8 +245,8 @@ This same concept is applied to FRED, or Federal Reserve Economic Data database 
             data_list.append(data_np[i][0])
         return np.array(data.index), np.array(data_list)
 </code></pre>
-With the collection of the FRED data, the rest of the procedures included above are implemented and the data is saved and collectable. The last bit of data collection comes with news collection. This is done with requests, pulling the received URLs and pulling the text out.
-<pre><code>@staticmethod
+<p>With the collection of the FRED data, the rest of the procedures included above are implemented and the data is saved and collectable. The last bit of data collection comes with news collection. This is done with requests, pulling the received URLs and pulling the text out.</p>
+<pre class="language-python"><code>@staticmethod
 def fetch_news_from_url(url):
         session = requests.Session()
         try:
@@ -263,8 +270,8 @@ def fetch_news_from_url(url):
 
         return news_articles
 </code></pre>
-This first, all the saved news articles are put into a system where between certain dates, news articles are fetched from Google. By adding the stock symbol on the base of google news, this can pull the first some amount of news articles from the web, putting the text into a list.
-<pre><code>@staticmethod
+<p>This first, all the saved news articles are put into a system where between certain dates, news articles are fetched from Google. By adding the stock symbol on the base of google news, this can pull the first some amount of news articles from the web, putting the text into a list.</p>
+<pre class="language-python"><code>@staticmethod
 def fetch_stock_news_between_dates(stock_symbol, start_date, end_date, batch_size=5):
         base_url = 'https://news.google.com/rss/search?'
         news_articles = []
@@ -293,8 +300,8 @@ def fetch_stock_news_between_dates(stock_symbol, start_date, end_date, batch_siz
         return news_articles
 
 </code></pre>
-After all this is done, all the the news articles are placed into the nltk sentiment analyzer for analysis, which is averaged out.
-<pre><code>@@staticmethod
+<p>After all this is done, all the the news articles are placed into the nltk sentiment analyzer for analysis, which is averaged out.</p>
+<pre class="language-python"><code>@@staticmethod
 def calculate_average_sentiment(news_articles):
         total_sentiment = 0
         num_articles = len(news_articles)
@@ -313,14 +320,14 @@ def calculate_average_sentiment(news_articles):
         else:
             return 1
 </code></pre>
-Now that all the data preparation is finished, the rest is a simple environment formation. A random date between the data range is round, and the data including dates, stock value, FRED dates, FRED data, and new data are all gathered into a state and normalized. The action is calculated from 0 to 2 times the acting detail based on this formula: \(mappedvalue = math.floor((percentchange - 1) / (self.upto / self.actdetail)) + self.actdetail + 1\), of which the AI needs to find. All of this comes together to from an environment where the max score is 500 if the AI gets all the guesses correct and -1000 if the AI gets all the guesses wrong. The environment can be placed into the Policy Algorithm for it to train.
+<p>Now that all the data preparation is finished, the rest is a simple environment formation. A random date between the data range is round, and the data including dates, stock value, FRED dates, FRED data, and new data are all gathered into a state and normalized. The action is calculated from 0 to 2 times the acting detail based on this formula: \(mappedvalue = math.floor((percentchange - 1) / (self.upto / self.actdetail)) + self.actdetail + 1\), of which the AI needs to find. All of this comes together to from an environment where the max score is 500 if the AI gets all the guesses correct and -1000 if the AI gets all the guesses wrong. The environment can be placed into the Policy Algorithm for it to train.</p>
 
 <h2>Training and Results</h2>
-Unfortunately, training is extremely time intensive. Saving the data onto the drive was a method to increase speed, however, the most of the time during training comes from the online search. On average, online search takes up 85 percent of the entire training time. For overall training time, each step seems to take 4.5 seconds on average, so training for 1000 epochs would take about 1 hour and 15 minutes, and training for 10000 epochs would take about 12 and a half hours, which is the maximum I've trained it for. In addition, it relies on constant input of web data, thus if internet connection is cut, though I have a failsafe, it is still problematic.
-The results are not too flattering. The AI normally fails to predict anything unless by accident. Based on interpretation, I can say one of three things. First possibility: my algorithm fails, which I'm pretty sure it doesn't because I have trained it with other environments. Second possibility: I haven't trained it enough, and this is a big possibility. As noted above, the time it takes for about 10000 epochs would be about 12.5 hours, which I don't have the resources for. If anyone else would like to train it more, they are free to do so, but this also leads me to the third possibility. Third possibility: The stock market is impossible to predict. This is the biggest possibility. The stock market is volatile, chaotic, and messy. Because of this, predicting the stock market might prove difficult. In addition, one common attribute I noticed is that in the short run, predictions are always one number, more commonly the middle number. However, as training progressed, the number became seemingly random. All this leads me to the conclusion that it seems either the AI will go for the completely safe action of going for the middle or will go for random actions in order to get lucky as to get a higher score by accident. 
+<p>Unfortunately, training is extremely time intensive. Saving the data onto the drive was a method to increase speed, however, the most of the time during training comes from the online search. On average, online search takes up 85 percent of the entire training time. For overall training time, each step seems to take 4.5 seconds on average, so training for 1000 epochs would take about 1 hour and 15 minutes, and training for 10000 epochs would take about 12 and a half hours, which is the maximum I've trained it for. In addition, it relies on constant input of web data, thus if internet connection is cut, though I have a failsafe, it is still problematic.</p>
+<p>The results are not too flattering. The AI normally fails to predict anything unless by accident. Based on interpretation, I can say one of three things. First possibility: my algorithm fails, which I'm pretty sure it doesn't because I have trained it with other environments. Second possibility: I haven't trained it enough, and this is a big possibility. As noted above, the time it takes for about 10000 epochs would be about 12.5 hours, which I don't have the resources for. If anyone else would like to train it more, they are free to do so, but this also leads me to the third possibility. Third possibility: The stock market is impossible to predict. This is the biggest possibility. The stock market is volatile, chaotic, and messy. Because of this, predicting the stock market might prove difficult. In addition, one common attribute I noticed is that in the short run, predictions are always one number, more commonly the middle number. However, as training progressed, the number became seemingly random. All this leads me to the conclusion that it seems either the AI will go for the completely safe action of going for the middle or will go for random actions in order to get lucky as to get a higher score by accident.</p> 
 
 <h2>Conclusion</h2>
-The conclusion is unfortunately that an AI predicting the stock market doesn't seem possible with current tech. Again, as noted above, perhaps better training or things like that can fix such issues. In the future, I'm sure someone will be able to figure something out, but for now, I shall get some sleep knowing I cooked.
+<p>The conclusion is unfortunately that an AI predicting the stock market doesn't seem possible with current tech. Again, as noted above, perhaps better training or things like that can fix such issues. In the future, I'm sure someone will be able to figure something out, but for now, I shall get some sleep knowing I cooked.</p>
 
 </body>
 </html>
