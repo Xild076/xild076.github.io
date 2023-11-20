@@ -6,6 +6,7 @@
   <title>RL for Stocks</title>
 </head>
 <body>
+<h1>RL for stock [By Harry Yin]</h1>
 
 <h1>Motivations for RL in Forecasting Stock Prices</h1>
 
