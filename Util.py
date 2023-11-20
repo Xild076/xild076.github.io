@@ -19,7 +19,7 @@ class Util():
     def progress_bar(progress, total, text, reward):
         percent = 50 * (progress / total)
         bar = '=' * int(percent) + '-' * (50 - int(percent))
-        print(colorama.Fore.GREEN + f"\r{text}: |{bar}| {percent * 2:.2f}% - Reward {reward}", end='\r')
+        print(colorama.Fore.GREEN + f"\r{text}: |{bar}| {percent * 2:.2f}% - {reward}", end='\r')
 
     def save_load(s_l_nps_npl, filename, obj):
         if s_l_nps_npl == 0:
@@ -48,10 +48,17 @@ class Util():
     
     def find_nearest(array, value):
         #array = np.asarray(array)
-        idx = (np.abs(array - np.full(len(array), value))).argmin()
+        if isinstance(value, pd._libs.tslibs.timestamps.Timestamp):
+            value = value.to_pydatetime()
+        idx = (np.abs(array - value)).argmin()
         return array[idx], idx
-        
     
+    def round_to_nearest_max(number):
+        magnitude = 10 ** (len(str(int(number))))
+        if number < 1:
+            return 10
+        return magnitude
+
     def dt64todt(date):
         return pd.Timestamp(date)
     
@@ -123,33 +130,12 @@ class Util():
 
         return f"{random.choice(adjective)}_{random.choice(nouns)}-{int_date}"
 
-
-
-class Debugger(object):
-    def __init__(self, run=False, pause_time=0.1):
-        #Getting variables
-        self.tracked_items = []
-
-        #Creating visual
-        self.root = Tk()
-        self.label = Label(self.root)
-    
-    def update_text(self):
-        self.label['text'] = "uwu"
-        self.label.pack()
-        self.root.after(100, self.update_text)
-    
-    def saved_items(self, variable):
-        self.tracked_items.append(variable)
-    
-    def data_to_str(self):
-        save_string = ""
-        for item in self.tracked_items:
-            base_string = f"{[ i for i, j in globals().items() if j == item][0]}: {str(item)} \n"
-            save_string += base_string
-        return base_string
-    
-    def run(self):
-        self.root.mainloop()
-
+    def min_max_scaling(data, min_value, max_value):
+        """
+        Perform Min-Max scaling on the data within the specified range [min_value, max_value].
+        """
+        min_data = np.min(data)
+        max_data = np.max(data)
+        scaled_data = min_value + (max_value - min_value) * (data - min_data) / ((max_data - min_data) + 1e-8)
+        return scaled_data
 
