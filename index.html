@@ -12,8 +12,23 @@
             background-color: #1c1c1c;
             color: #bababa;
             font-family: 'Times New Roman', sans-serif;
-            margin: 200px;
             line-height: 1.6;
+        }
+        body {
+          margin: 200px;
+        }
+        
+        /* Adjust margins for smaller screens using media queries */
+        @media only screen and (max-width: 600px) {
+          body {
+            margin: 20px;
+          }
+        }
+        
+        @media only screen and (min-width: 601px) and (max-width: 1024px) {
+          body {
+            margin: 50px;
+          }
         }
 
         h1, h2, h3 {
