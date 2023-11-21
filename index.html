@@ -54,22 +54,10 @@
             border-radius: 10px;
             overflow: auto;
         }
-        #last-updated {
-          color: #bababa;
-          font-size: 14px;
-        }
+
     </style>
 </head>
 <body>
-
-<p id="last-updated">Last Updated: <span id="update-date"></span></p>
-
-<script>
-    // JavaScript to update the last updated date and time
-const updateDateElement = document.getElementById('update-date');
-const options = { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true };
-updateDateElement.textContent = new Date().toLocaleString('en-US', options);
-</script>
     
 <h1>RL for stock [By Harry Yin]</h1>
 
