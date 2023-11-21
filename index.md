@@ -4,49 +4,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RL for Stocks</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism.min.css"
-        integrity="sha256-W7ry+jEvToSqeCrD7TktYBEb9bZXTENiS5+eq0iR98E=" crossorigin="anonymous" />
-    <style>
-        body {
-            background-color: #111f33;
-            color: #bababa;
-            font-family: 'Times New Roman', sans-serif;
-            margin: 40px;
-            line-height: 1.6;
-        }
-
-        h1, h2, h3 {
-            color: white;
-        }
-
-        p {
-            margin-bottom: 40px;
-        }
-
-        pre {
-            background-color: #333;
-            color: #bababa;
-            padding: 15px;
-            border-radius: 10px;
-            overflow: auto;
-        }
-    </style>
+    
 </head>
 <body>
 <h1>RL for stock [By Harry Yin]</h1>
 
-<h1>Motivations for RL in Forecasting Stock Prices</h1>
+<h2>Motivations for RL in Forecasting Stock Prices</h2>
 
 <p>There were two main algorithms we could have done for our predictions of stock prices: Supervised Learning and Reinforcement Learning. Let us list out the benefits and downsides.</p>
 
-<p><strong>Supervised Learning:</strong></p>
+<h3>Supervised Learning:</h3>
 <p>The pros are the fact that the training model is relatively easy. The learning speed of supervised learning usually surpasses that of a reinforcement learning algorithm and the model loss function is easier to play with. The con is that it can't be expanded upon. If I wanted it to learn further days with continuity, that would not be possible.</p>
 
-<p><strong>Reinforcement Learning:</strong></p>
+<h3>Reinforcement Learning:</h3>
 <p>The major pro is the fact that it can be expanded upon. If I want it to predict the stock consistently for the next 2 weeks, it would be possible, unlike with supervised learning. However, unlike supervised learning, the training is much more difficult. Supervised learning produces results quicker and more consistently.</p>
 
-<p><strong>Verdict:</strong></p>
+<h3>Verdict:</h3>
 <p>All in all, I decided to go with reinforcement learning. The main reason was personal; I wanted to try out reinforcement learning. The training turned out to be a massive drawback; however, I decided the learning experience and the possibility of expansion outweighed that drawback.</p>
 
 <h2>Development of the Policy Algorithm</h2>
@@ -322,7 +295,7 @@ def fetch_stock_news_between_dates(stock_symbol, start_date, end_date, batch_siz
 
 </code></pre>
 <p>After all this is done, all the the news articles are placed into the nltk sentiment analyzer for analysis, which is averaged out.</p>
-<pre class="language-python"><code>@@staticmethod
+<pre class="language-python"><code>@staticmethod
 def calculate_average_sentiment(news_articles):
         total_sentiment = 0
         num_articles = len(news_articles)
@@ -341,7 +314,7 @@ def calculate_average_sentiment(news_articles):
         else:
             return 1
 </code></pre>
-<p>Now that all the data preparation is finished, the rest is a simple environment formation. A random date between the data range is round, and the data including dates, stock value, FRED dates, FRED data, and new data are all gathered into a state and normalized. The action is calculated from 0 to 2 times the acting detail based on this formula: \(mappedvalue = math.floor((percentchange - 1) / (self.upto / self.actdetail)) + self.actdetail + 1\), of which the AI needs to find. All of this comes together to from an environment where the max score is 500 if the AI gets all the guesses correct and -1000 if the AI gets all the guesses wrong. The environment can be placed into the Policy Algorithm for it to train.</p>
+<p>Now that all the data preparation is finished, the rest is a simple environment formation. A random date between the data range is round, and the data including dates, stock value, FRED dates, FRED data, and new data are all gathered into a state and normalized. The action is calculated from 0 to 2 times the acting detail based on this formula: \(mappedvalue = math.floor((percentchange - 1) / (self.upto / self.actdetail)) + self.actdetail + 1\), of which the AI needs to find. All of this comes together to from an environment where the max score is 500 if the AI gets all the guesses correct and -1000 if the AI gets all the guesses wrong. The environment can be placed into the Policy Algorithm for it to train. (Full code: <a href="https://github.com/Xild076/poly-stock-ai/blob/main/StockData.py">https://github.com/Xild076/poly-stock-ai/blob/main/StockData.py</a>)</p></p>
 
 <h2>Training and Results</h2>
 <p>Unfortunately, training is extremely time intensive. Saving the data onto the drive was a method to increase speed, however, the most of the time during training comes from the online search. On average, online search takes up 85 percent of the entire training time. For overall training time, each step seems to take 4.5 seconds on average, so training for 1000 epochs would take about 1 hour and 15 minutes, and training for 10000 epochs would take about 12 and a half hours, which is the maximum I've trained it for. In addition, it relies on constant input of web data, thus if internet connection is cut, though I have a failsafe, it is still problematic.</p>
@@ -349,7 +322,7 @@ def calculate_average_sentiment(news_articles):
 <p>As seen above the results are not too flattering (x axis is training epoch, y axis is result). It remains at -1000, the least score or relatively getting everything wrong. The AI normally fails to predict anything unless by accident. Based on interpretation, I can say one of three things. First possibility: my algorithm fails, which I'm pretty sure it doesn't because I have trained it with other environments. Second possibility: I haven't trained it enough, and this is a big possibility. As noted above, the time it takes for about 10000 epochs would be about 12.5 hours, which I don't have the resources for. If anyone else would like to train it more, they are free to do so, but this also leads me to the third possibility. Third possibility: The stock market is impossible to predict. This is the biggest possibility. The stock market is volatile, chaotic, and messy. Because of this, predicting the stock market might prove difficult. In addition, one common attribute I noticed is that in the short run, predictions are always one number, more commonly the middle number. However, as training progressed, the number became seemingly random. All this leads me to the conclusion that it seems either the AI will go for the completely safe action of going for the middle or will go for random actions in order to get lucky as to get a higher score by accident.</p> 
 
 <h2>Conclusion</h2>
-<p>The conclusion is unfortunately that an AI predicting the stock market doesn't seem possible with current tech. Again, as noted above, perhaps better training or things like that can fix such issues. In the future, I'm sure someone will be able to figure something out, but for now, I shall get some sleep knowing I cooked.</p>
+<p>The conclusion is unfortunately that an AI predicting the stock market doesn't seem possible with current tech. Again, as noted above, perhaps better training or things like that can fix such issues. In the future, I'm sure someone will be able to figure something out, but for now, I shall get some sleep knowing I cooked. (Everything shown above + utility code: <a href="https://github.com/Xild076/poly-stock-ai">https://github.com/Xild076/poly-stock-ai</a>)</p>
 
 </body>
 </html>
