@@ -54,9 +54,21 @@
             border-radius: 10px;
             overflow: auto;
         }
+        #last-updated {
+          color: #bababa;
+          font-size: 14px;
+        }
     </style>
 </head>
 <body>
+
+<p id="last-updated">Last Updated: <span id="update-date"></span></p>
+
+<script>
+    // JavaScript to update the last updated date
+document.getElementById('update-date').textContent = new Date().toLocaleDateString();
+</script>
+    
 <h1>RL for stock [By Harry Yin]</h1>
 
 <h2>Motivations for RL in Forecasting Stock Prices</h2>
