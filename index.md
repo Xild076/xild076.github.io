@@ -4,10 +4,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+    <title>RL for Stocks</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.23.0/themes/prism.min.css"
+        integrity="sha256-W7ry+jEvToSqeCrD7TktYBEb9bZXTENiS5+eq0iR98E=" crossorigin="anonymous" />
+    <style>
+        body {
+            background-color: #1c1c1c;
+            color: #bababa;
+            font-family: 'Verdana', sans-serif;
+            line-height: 1.6;
+        }
+        body {
+          margin: 250px;
+        }
+        
+        /* Adjust margins for smaller screens using media queries */
+        @media only screen and (max-width: 600px) {
+          body {
+            margin: 20px;
+          }
+        }
+        
+        @media only screen and (min-width: 601px) and (max-width: 1024px) {
+          body {
+            margin: 20px;
+          }
+        }
+
+        h1, h2, h3 {
+            color: #bababa;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        a {
+            color: #00ffee
+        }
+
+        p {
+            margin-bottom: 20px;
+        }
+
+        pre {
+            background-color: #333;
+            color: #bababa;
+            padding: 15px;
+            border-radius: 10px;
+            overflow: auto;
+        }
+
+    </style>
 </head>
 <body>
+    
 <h1>RL for stock [By Harry Yin]</h1>
+
+<h2>[By Harry Yin] - Last Updated: 1/24/24</h2>
 
 <h2>Motivations for RL in Forecasting Stock Prices</h2>
 
@@ -323,6 +377,18 @@ def calculate_average_sentiment(news_articles):
 
 <h2>Conclusion</h2>
 <p>The conclusion is unfortunately that an AI predicting the stock market doesn't seem possible with current tech. Again, as noted above, perhaps better training or things like that can fix such issues. In the future, I'm sure someone will be able to figure something out, but for now, I shall get some sleep knowing I cooked. (Everything shown above + utility code: <a href="https://github.com/Xild076/poly-stock-ai">https://github.com/Xild076/poly-stock-ai</a>)</p>
+
+<h2>UPDATES</h2>
+<p>12/9/23: Just found out about JAX. According to some documentation, it only seems to be more efficient on a PC with a GPU, so it might not work on my computer. Will look into it.</p>
+
+<p>12/17/23: Will try to make a supervised learning model to use in implementation.</p>
+
+<p>12/30/23: Have a new supervised learning model. Put it google drive 😁: https://drive.google.com/file/d/16OtuU8x4T_r01VNdMFDY04soSThYnrqq/view?usp=sharing</p>
+
+<p>1/6/24: New year new me!!! Need to tweek Stockdata to fit the model. Will take a bit b/c its annoying and I don't have time.</p>
+
+<p>1/14/24: Found a new interesting API. Has an index for stock prediction built-in. Seems interesting. Could use along with everything else to implement.</p>
+
 
 </body>
 </html>
